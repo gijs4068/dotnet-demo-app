@@ -21,6 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Test-only config: points to todo_test_db. Named differently from TodoApp's
+         appsettings.json, which is also copied into this output folder. -->
+    <None Update="appsettings.Test.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TodoApp\TodoApp.csproj" />
   </ItemGroup>
 

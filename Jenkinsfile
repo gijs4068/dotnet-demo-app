@@ -6,7 +6,7 @@
 //   - Only standard plugins (Pipeline, Git). The MSTest plugin is optional:
 //     if installed, test results show up in Jenkins; if not, they're just archived.
 //
-// The integration tests read their connection string from TodoApp.Tests/appsettings.json
+// The integration tests read their connection string from TodoApp.Tests/appsettings.Test.json
 // (Server=localhost;Port=3306;Database=todo_test_db). To satisfy that without editing the
 // repo, the .NET SDK container joins the network namespace of a throwaway MariaDB
 // container, so "localhost:3306" inside the build container *is* the test database.
@@ -28,7 +28,7 @@ pipeline {
         DOTNET_IMAGE  = 'mcr.microsoft.com/dotnet/sdk:10.0'
         MARIADB_IMAGE = 'mariadb:11'
 
-        // Demo credentials, identical to TodoApp.Tests/appsettings.json.
+        // Demo credentials, identical to TodoApp.Tests/appsettings.Test.json.
         // For anything real, store these as Jenkins credentials instead.
         DB_NAME     = 'todo_test_db'
         DB_USER     = 'todo_usr'
@@ -73,20 +73,9 @@ pipeline {
                         sleep 2
                     done
 
-                    # The test project doesn't copy its own appsettings.json to its output,
-                    # so the tests actually pick up TodoApp/appsettings.json (database todo_db).
-                    # Create both databases so the tests pass whichever config they read.
-                    docker exec -i "$DB_CONTAINER" mariadb -uroot -p"$DB_ROOT_PW" <<SQL
-CREATE DATABASE IF NOT EXISTS todo_db;
-GRANT ALL PRIVILEGES ON todo_db.* TO '$DB_USER'@'%';
-FLUSH PRIVILEGES;
-SQL
-
-                    # Create the todos table in both databases
-                    for db in "$DB_NAME" todo_db; do
-                        docker exec -i "$DB_CONTAINER" \
-                            mariadb -u"$DB_USER" -p"$DB_PASSWORD" "$db" < TodoApp/schema.sql
-                    done
+                    # Create the todos table in the test database
+                    docker exec -i "$DB_CONTAINER" \
+                        mariadb -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < TodoApp/schema.sql
                 '''
             }
         }
