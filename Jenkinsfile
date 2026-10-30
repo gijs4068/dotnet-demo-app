@@ -34,8 +34,6 @@ pipeline {
     environment {
         MARIADB_IMAGE = 'mariadb:11'
 
-        // Demo credentials, identical to appsettings.Test.json and docker-compose.yml.
-        // For anything real, store these as Jenkins credentials instead.
         DB_USER     = 'todo_usr'
         DB_PASSWORD = 'letmeinplz'
         DB_ROOT_PW  = 'sekrit'
