@@ -1,0 +1,25 @@
+# Image that builds the solution and runs the test suite.
+# Used by the Jenkins pipeline; run it on the network of a MariaDB container
+# so that localhost:3306 reaches the test database:
+#   docker run --rm --network container:<db-container> todoapp-tests
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1
+
+WORKDIR /src
+
+# Restore first, so the package layer is cached until a project file changes
+COPY dotnet-demo.slnx ./
+COPY TodoApp/TodoApp.csproj TodoApp/
+COPY TodoApp.Tests/TodoApp.Tests.csproj TodoApp.Tests/
+RUN dotnet restore dotnet-demo.slnx
+
+# Build at image build time: compile errors fail the build, not the test run
+COPY . .
+RUN dotnet build dotnet-demo.slnx -c Release --no-restore
+
+CMD ["dotnet", "test", "dotnet-demo.slnx", "-c", "Release", "--no-build", \
+     "--logger", "trx;LogFileName=test-results.trx", \
+     "--logger", "console;verbosity=normal", \
+     "--results-directory", "/src/TestResults"]
