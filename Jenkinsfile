@@ -73,9 +73,20 @@ pipeline {
                         sleep 2
                     done
 
-                    # Create the todos table in the test database
-                    docker exec -i "$DB_CONTAINER" \
-                        mariadb -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < TodoApp/schema.sql
+                    # The test project doesn't copy its own appsettings.json to its output,
+                    # so the tests actually pick up TodoApp/appsettings.json (database todo_db).
+                    # Create both databases so the tests pass whichever config they read.
+                    docker exec -i "$DB_CONTAINER" mariadb -uroot -p"$DB_ROOT_PW" <<SQL
+CREATE DATABASE IF NOT EXISTS todo_db;
+GRANT ALL PRIVILEGES ON todo_db.* TO '$DB_USER'@'%';
+FLUSH PRIVILEGES;
+SQL
+
+                    # Create the todos table in both databases
+                    for db in "$DB_NAME" todo_db; do
+                        docker exec -i "$DB_CONTAINER" \
+                            mariadb -u"$DB_USER" -p"$DB_PASSWORD" "$db" < TodoApp/schema.sql
+                    done
                 '''
             }
         }
